@@ -23,7 +23,7 @@ def manage(user):
         try:
             message = user.recv(1024).decode('ascii')
             if message.lower() == 'change':
-                user.send('Enter your new username:'.encode('ascii'))
+                user.send('new username:'.encode('ascii'))
                 new_name = user.recv(1024).decode('ascii')
                 index = users.index(user)
                 old_name = names[index]
@@ -32,8 +32,23 @@ def manage(user):
             elif message.lower() == 'list':
                 user_list = ', '.join(names)
                 user.send(f'Users in the chatroom: {user_list}'.encode('ascii'))
+            elif message.lower() == 'private':
+                user.send('the recipinet name: '.encode('ascii'))
+                recipient = user.recv(1024).decode('ascii')
+                if recipient in names:
+                    index = names.index(recipient)
+                    recipient_user = users[index]
+                    user.send('your private message:'.encode('ascii'))
+                    private_message = user.recv(1024).decode('ascii')
+                    recipient_user.send(f'private message from {names[users.index(user)]}')
+                    recipient_user.send(private_message.encode('ascii'))
+                else:
+                    user.send('user not found'.encode('ascii'))
             else:
-                show(message.encode('ascii'))
+                index = users.index(user)
+                name = names[index]
+                public_message = f'{name}: {message}'
+                show(public_message.encode('ascii'))
         except:
             index = users.index(user)
             users.remove(user)
@@ -60,6 +75,6 @@ def receive():
         thread = threading.Thread(target=manage, args=(user,))
         thread.start()
 
-print("server listening...")
+print("server is listening...")
 receive()
 

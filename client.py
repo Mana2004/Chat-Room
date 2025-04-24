@@ -26,18 +26,24 @@ def write():
         if message.lower() == 'change':
             user.send('change'.encode('ascii'))
             print(user.recv(1024).decode('ascii'))
-            name = input("Enter your new username: ")
+            name = input("new username: ")
             user.send(name.encode('ascii'))
         elif message.lower() == 'list':
             user.send('list'.encode('ascii'))
             print(user.recv(1024).decode('ascii'))
+        elif message.lower() == 'private' :
+            user.send('private'.encode('ascii'))
+            recipient = input("recipient's name:")
+            user.send(recipient.encode('ascii'))
+            private_mess = input("your private message:")
+            user.send(private_mess.encode('ascii'))
         elif message.lower() == 'exit':
             print("Exiting the chat...")
             user.send('exit'.encode('ascii'))
             user.close()
             break
         else:
-            user.send(f'{name}: {message}'.encode('ascii'))
+            user.send(message.encode('ascii'))
 
 
 
