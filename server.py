@@ -7,13 +7,12 @@ class Server:
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server.bind((host, port))
         self.server.listen()
-        print(f"Server started on {host}:{port}")
+        print(f"Server is listening on {host}:{port}")
 
         self.users = []
         self.names = []
 
     def broadcast(self, message):
-        """Sends a message to all connected users."""
         for user in self.users:
             try:
                 user.send(message)
@@ -21,7 +20,6 @@ class Server:
                 self.remove_user(user)
 
     def remove_user(self, user):
-        """Removes a user from the chat."""
         if user in self.users:
             index = self.users.index(user)
             name = self.names[index]
@@ -89,8 +87,8 @@ class Server:
             self.names.append(name)
 
             print(f"Name of the client is {name}")
-            self.broadcast(f'{name} joined the chat.'.encode('ascii'))
             user.send('Connected to the server.'.encode('ascii'))
+            self.broadcast(f'{name} joined the chat.'.encode('ascii'))
 
             thread = threading.Thread(target=self.handle_user, args=(user,))
             thread.start()
