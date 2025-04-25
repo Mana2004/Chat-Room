@@ -1,6 +1,6 @@
 import socket
 
-class ChatClient:
+class Client:
     def __init__(self, host, port, name):
         self.user = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.user.connect((host, port))

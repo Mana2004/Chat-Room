@@ -1,7 +1,7 @@
 import socket
 import threading
 
-class ChatServer:
+class Server:
     def __init__(self, host, port):
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server.bind((host, port))
@@ -86,5 +86,5 @@ class ChatServer:
 
 
 if __name__ == "__main__":
-    server = ChatServer('127.0.0.1', 15000)
+    server = Server('0.0.0.0', 15000)
     server.start()

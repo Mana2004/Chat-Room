@@ -6,7 +6,7 @@ import threading
 class ChatApp(ChatClient):
     def __init__(self, root, host, port):
         self.root = root
-        self.root.title("Chat App")
+        self.root.title("Chat Room")
 
         self.root.withdraw()
 
@@ -28,6 +28,9 @@ class ChatApp(ChatClient):
         self.send_button = tk.Button(root, text="Send", command=self.send_message)
         self.send_button.pack(side='left', padx=(5, 10))
 
+        self.chat_frame.tag_configure("user", foreground="white", background="purple")
+        self.chat_frame.tag_configure("private", foreground="white", background="blue")
+
         threading.Thread(target=self.receive, args=(self.display_message,), daemon=True).start()
 
     def send_message(self):
@@ -45,10 +48,16 @@ class ChatApp(ChatClient):
 
     def display_message(self, message):
         self.chat_frame.config(state='normal')
-        self.chat_frame.insert(tk.END, f"{message}\n")
+
+        if message.startswith('Private'):
+            self.chat_frame.insert(tk.END, f"{message}\n", "private")
+        elif message.startswith('System'):
+            self.chat_frame.insert(tk.END, f"{message}\n", "system")
+        else:
+            self.chat_frame.insert(tk.END, f"{message}\n", "user")
+
         self.chat_frame.config(state='disabled')
         self.chat_frame.see(tk.END)
-
 
 if __name__ == "__main__":
     root = tk.Tk()
