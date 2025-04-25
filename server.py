@@ -1,102 +1,102 @@
 import socket
 import threading
 
-host = '0.0.0.0' #192.168.87.138
-port = 15000
 
-server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server.bind((host, port))
-server.listen()
+class Server:
+    def __init__(self, host, port):
+        self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server.bind((host, port))
+        self.server.listen()
+        print(f"Server started on {host}:{port}")
 
-users = []
-names = []
+        self.users = []
+        self.names = []
 
-def show(message):
-    for user in users:
-        try:
-            user.send(message)
-        except:
-            users.remove(user)
+    def broadcast(self, message):
+        """Sends a message to all connected users."""
+        for user in self.users:
+            try:
+                user.send(message)
+            except:
+                self.remove_user(user)
 
-def manage(user):
-    while True:
-        try:
-            message = user.recv(1024).decode('ascii')
-            if message.lower() == 'change':
-                user.send('new username:'.encode('ascii'))
-                new_name = user.recv(1024).decode('ascii')
-                index = users.index(user)
-                old_name = names[index]
-                names[index] = new_name
-                show(f'{old_name} changed their username to {new_name}'.encode('ascii'))
-
-            elif message.lower() == 'list':
-                user_list = ', '.join(names)
-                user.send(f'Users in the chatroom: {user_list}'.encode('ascii'))
-
-            elif message.lower() == 'private':
-                user.send('the recipient names (comma-separated): '.encode('ascii'))
-                recipients = user.recv(1024).decode('ascii').split(',')
-                recipients = [r.strip() for r in recipients]
-
-                valid = []
-                invalid = []
-                for recipient in recipients:
-                    if recipient in names:
-                        valid.append(recipient)
-                    else:
-                        invalid.append(recipient)
-
-                if invalid:
-                    user.send(f'user(s) not found: {", ".join(invalid)}'.encode('ascii'))
-                if valid:
-                    user.send('your private message:'.encode('ascii'))
-                    private_message = user.recv(1024).decode('ascii')
-
-                    for recipient in valid:
-                        index = names.index(recipient)
-                        recipient_user = users[index]
-                        recipient_user.send(
-                            f'private message from {names[users.index(user)]}: {private_message}'.encode('ascii'))
-
-                    user.send(f'Private message sent to: {", ".join(valid)}'.encode('ascii'))
-
-            elif message.lower() == 'exit':
-                raise Exception("Client requested disconnect.")
-
-            else:
-                index = users.index(user)
-                name = names[index]
-                public_message = f'{name}: {message}'
-                show(public_message.encode('ascii'))
-
-        except Exception as e:
-            if user in users:
-                index = users.index(user)
-                name = names[index]
-                users.remove(user)
-                names.remove(name)
-                show(f'{name} left the chat.'.encode('ascii'))
+    def remove_user(self, user):
+        """Removes a user from the chat."""
+        if user in self.users:
+            index = self.users.index(user)
+            name = self.names[index]
+            self.users.remove(user)
+            self.names.remove(name)
             user.close()
-            break
+            self.broadcast(f'{name} left the chat.'.encode('ascii'))
 
-def receive():
-    while True:
-        user, address = server.accept()
-        print(f"connected with {address}")
+    def handle_user(self, user):
+        while True:
+            try:
+                message = user.recv(1024).decode('ascii')
+                if message.lower() == 'change':
+                    user.send('Enter your new username:'.encode('ascii'))
+                    new_name = user.recv(1024).decode('ascii')
+                    index = self.users.index(user)
+                    old_name = self.names[index]
+                    self.names[index] = new_name
+                    self.broadcast(f'{old_name} changed their username to {new_name}'.encode('ascii'))
+                elif message.lower() == 'list':
+                    user_list = ', '.join(self.names)
+                    user.send(f'Users in the chatroom: {user_list}'.encode('ascii'))
+                elif message.lower() == 'private':
+                    user.send('Enter recipient names (comma-separated): '.encode('ascii'))
+                    recipients = user.recv(1024).decode('ascii').split(',')
+                    recipients = [r.strip() for r in recipients]
 
-        user.send('Name'.encode('ascii'))
-        name = user.recv(1024).decode('ascii')
-        names.append(name)
-        users.append(user)
+                    valid = []
+                    invalid = []
+                    for recipient in recipients:
+                        if recipient in self.names:
+                            valid.append(recipient)
+                        else:
+                            invalid.append(recipient)
 
-        print(f'name of the user is {name}')
-        show(f'{name} joined the chat'. encode('ascii'))
-        user.send('connected to the server'.encode('ascii'))
+                    if invalid:
+                        user.send(f'User(s) not found: {", ".join(invalid)}'.encode('ascii'))
+                    if valid:
+                        user.send('Enter your private message: '.encode('ascii'))
+                        private_message = user.recv(1024).decode('ascii')
+                        for recipient in valid:
+                            index = self.names.index(recipient)
+                            recipient_user = self.users[index]
+                            recipient_user.send(f'Private message from {self.names[self.users.index(user)]}: {private_message}'.encode('ascii'))
+                        user.send(f'Private message sent to: {", ".join(valid)}'.encode('ascii'))
+                elif message.lower() == 'exit':
+                    raise Exception("Client requested disconnect.")
+                else:
+                    index = self.users.index(user)
+                    name = self.names[index]
+                    public_message = f'{name}: {message}'
+                    self.broadcast(public_message.encode('ascii'))
+            except:
+                self.remove_user(user)
+                break
 
-        thread = threading.Thread(target=manage, args=(user,))
-        thread.start()
+    def start(self):
+        while True:
+            user, address = self.server.accept()
+            print(f"Connected with {address}")
 
-print("server is listening...")
-receive()
+            user.send('Name'.encode('ascii'))
+            name = user.recv(1024).decode('ascii')
+            self.users.append(user)
+            self.names.append(name)
+
+            print(f"Name of the client is {name}")
+            self.broadcast(f'{name} joined the chat.'.encode('ascii'))
+            user.send('Connected to the server.'.encode('ascii'))
+
+            thread = threading.Thread(target=self.handle_user, args=(user,))
+            thread.start()
+
+
+if __name__ == "__main__":
+    server = Server('0.0.0.0', 15000)
+    server.start()
 

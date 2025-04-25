@@ -1,62 +1,62 @@
 import socket
 import threading
 
-user = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-user.connect(('127.0.0.1', 15000))
+class Client:
+    def __init__(self, host, port):
+        self.user = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.user.connect((host, port)) #192.168.87.138
+        self.name = input("Enter your nickname: ")
 
-name = input("Enter your nickname: ")
+    def receive(self):
+        while True:
+            try:
+                data = self.user.recv(1024)
+                if not data:
+                    break
 
-def receive():
-    while True:
-        try:
-            data = user.recv(1024)
-            if not data:
+                message = data.decode('ascii')
+                if message == 'Name':
+                    self.user.send(self.name.encode('ascii'))
+                else:
+                    print(f'\n{message}')
+            except Exception as e:
+                print(f"An unexpected error occurred: {e}")
+                self.user.close()
                 break
 
-            message = data.decode('ascii')
-            if message == 'Name':
-                user.send(name.encode('ascii'))
+    def write(self):
+        while True:
+            message = input()
+            command = message.lower()
+
+            if command == 'change':
+                self.user.send('change'.encode('ascii'))
+                new_name = input("Enter your new username: ")
+                self.user.send(new_name.encode('ascii'))
+                self.name = new_name
+            elif command == 'list':
+                self.user.send('list'.encode('ascii'))
+            elif command == 'private':
+                self.user.send('private'.encode('ascii'))
+                recipients = input("Enter recipient names (comma-separated): ")
+                self.user.send(recipients.encode('ascii'))
+                private_message = input("Enter your private message: ")
+                self.user.send(private_message.encode('ascii'))
+            elif command == 'exit': 
+                print("Exiting the chat...")
+                self.user.send('exit'.encode('ascii'))
+                self.user.close()
+                break
             else:
-                print(message)
+                self.user.send(f'{self.name}: {message}'.encode('ascii'))
 
-        except OSError:
-            break
+    def start(self):
+        receive_thread = threading.Thread(target=self.receive)
+        receive_thread.start()
 
-        except Exception as e:
-            print(f"An unexpected error occurred: {e}")
-            break
+        write_thread = threading.Thread(target=self.write)
+        write_thread.start()
 
-
-def write():
-    global name
-    while True:
-        message = input()
-        cmd = message.lower()
-
-        if cmd == 'change':
-            user.send('change'.encode('ascii'))
-            new_name = input()
-            user.send(new_name.encode('ascii'))
-            name = new_name
-
-        elif cmd == 'list':
-            user.send('list'.encode('ascii')) 
-
-        elif cmd == 'private':
-            user.send('private'.encode('ascii'))
-            recipients = input()
-            user.send(recipients.encode('ascii'))
-            pm = input()
-            user.send(pm.encode('ascii'))
-
-        elif cmd == 'exit':
-            user.send('exit'.encode('ascii'))
-            print("Exiting the chat...")
-            user.close()
-            break
-
-        else:
-            user.send(message.encode('ascii'))
-
-threading.Thread(target=receive).start()
-threading.Thread(target=write).start()
+if __name__ == "__main__":
+    client = Client('127.0.0.1', 15000)
+    client.start()
