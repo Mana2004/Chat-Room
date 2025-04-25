@@ -33,7 +33,7 @@ def write():
             print(user.recv(1024).decode('ascii'))
         elif message.lower() == 'private' :
             user.send('private'.encode('ascii'))
-            recipient = input("recipient's name:")
+            recipient = input("the recipient names :")
             user.send(recipient.encode('ascii'))
             private_mess = input("your private message:")
             user.send(private_mess.encode('ascii'))
