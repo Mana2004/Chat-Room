@@ -29,43 +29,26 @@ def manage(user):
                 old_name = names[index]
                 names[index] = new_name
                 show(f'{old_name} changed their username to {new_name}'.encode('ascii'))
+
             elif message.lower() == 'list':
                 user_list = ', '.join(names)
                 user.send(f'Users in the chatroom: {user_list}'.encode('ascii'))
-            else:
-                index = users.index(user)
-                name = names[index]
-                public_message = f'{name}: {message}'
-                show(public_message.encode('ascii'))
-        except:
-            index = users.index(user)
-            users.remove(user)
-            user.close()
-            name = names[index]
-            names.remove(name)
-            show(f'{name} left the chat.'.encode('ascii'))
-            break
 
-def private(user):
-    while True:
-            message = user.recv(1024).decode('ascii')
-            if message.lower() == 'private':
-                user.send('the recipinet names: '.encode('ascii'))
+            elif message.lower() == 'private':
+                user.send('the recipient names (comma-separated): '.encode('ascii'))
                 recipients = user.recv(1024).decode('ascii').split(',')
-                recipients = [recipient.strip() for recipient in recipients]
-                
+                recipients = [r.strip() for r in recipients]
+
                 valid = []
                 invalid = []
-
                 for recipient in recipients:
                     if recipient in names:
                         valid.append(recipient)
                     else:
                         invalid.append(recipient)
-                
-                if invalid:
-                    user.send(f'user or users not found: {", ".join(invalid)}'.encode('ascii'))
 
+                if invalid:
+                    user.send(f'user(s) not found: {", ".join(invalid)}'.encode('ascii'))
                 if valid:
                     user.send('your private message:'.encode('ascii'))
                     private_message = user.recv(1024).decode('ascii')
@@ -73,10 +56,29 @@ def private(user):
                     for recipient in valid:
                         index = names.index(recipient)
                         recipient_user = users[index]
-                        recipient_user.send(f'private message from {names[users.index(user)]}: '.encode('ascii'))
-                        recipient_user.send(private_message.encode('ascii'))
+                        recipient_user.send(
+                            f'private message from {names[users.index(user)]}: {private_message}'.encode('ascii'))
 
                     user.send(f'Private message sent to: {", ".join(valid)}'.encode('ascii'))
+
+            elif message.lower() == 'exit':
+                raise Exception("Client requested disconnect.")
+
+            else:
+                index = users.index(user)
+                name = names[index]
+                public_message = f'{name}: {message}'
+                show(public_message.encode('ascii'))
+
+        except Exception as e:
+            if user in users:
+                index = users.index(user)
+                name = names[index]
+                users.remove(user)
+                names.remove(name)
+                show(f'{name} left the chat.'.encode('ascii'))
+            user.close()
+            break
 
 def receive():
     while True:

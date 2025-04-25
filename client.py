@@ -9,47 +9,54 @@ name = input("Enter your nickname: ")
 def receive():
     while True:
         try:
-            message = user.recv(1024).decode('ascii')
+            data = user.recv(1024)
+            if not data:
+                break
+
+            message = data.decode('ascii')
             if message == 'Name':
                 user.send(name.encode('ascii'))
             else:
                 print(message)
-        except:
-            print("An error occurred!")
-            user.close()
+
+        except OSError:
             break
+
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
+            break
+
 
 def write():
     global name
     while True:
-        message = input("")
-        if message.lower() == 'change':
+        message = input()
+        cmd = message.lower()
+
+        if cmd == 'change':
             user.send('change'.encode('ascii'))
-            print(user.recv(1024).decode('ascii'))
-            name = input("new username: ")
-            user.send(name.encode('ascii'))
-        elif message.lower() == 'list':
-            user.send('list'.encode('ascii'))
-            print(user.recv(1024).decode('ascii'))
-        elif message.lower() == 'private' :
+            new_name = input()
+            user.send(new_name.encode('ascii'))
+            name = new_name
+
+        elif cmd == 'list':
+            user.send('list'.encode('ascii')) 
+
+        elif cmd == 'private':
             user.send('private'.encode('ascii'))
-            recipient = input("the recipient names :")
-            user.send(recipient.encode('ascii'))
-            private_mess = input("your private message:")
-            user.send(private_mess.encode('ascii'))
-        elif message.lower() == 'exit':
-            print("Exiting the chat...")
+            recipients = input()
+            user.send(recipients.encode('ascii'))
+            pm = input()
+            user.send(pm.encode('ascii'))
+
+        elif cmd == 'exit':
             user.send('exit'.encode('ascii'))
+            print("Exiting the chat...")
             user.close()
             break
+
         else:
             user.send(message.encode('ascii'))
 
-
-
-receive_thread = threading.Thread(target=receive)
-receive_thread.start()
-
-write_thread = threading.Thread(target=write)
-write_thread.start()
-
+threading.Thread(target=receive).start()
+threading.Thread(target=write).start()
