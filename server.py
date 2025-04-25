@@ -1,8 +1,7 @@
 import socket
 import threading
 
-
-class Server:
+class ChatServer:
     def __init__(self, host, port):
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server.bind((host, port))
@@ -29,8 +28,14 @@ class Server:
             self.broadcast(f'{name} left the chat.'.encode('ascii'))
 
     def handle_user(self, user):
-        while True:
-            try:
+        try:
+            name = user.recv(1024).decode('ascii')
+            self.users.append(user)
+            self.names.append(name)
+
+            self.broadcast(f'{name} joined the chat.'.encode('ascii'))
+
+            while True:
                 message = user.recv(1024).decode('ascii')
                 if message.lower() == 'change':
                     user.send('Enter your new username:'.encode('ascii'))
@@ -63,38 +68,23 @@ class Server:
                         for recipient in valid:
                             index = self.names.index(recipient)
                             recipient_user = self.users[index]
-                            recipient_user.send(f'Private message from {self.names[self.users.index(user)]}: {private_message}'.encode('ascii'))
+                            recipient_user.send(f'Private message from {name}: {private_message}'.encode('ascii'))
                         user.send(f'Private message sent to: {", ".join(valid)}'.encode('ascii'))
                 elif message.lower() == 'exit':
                     raise Exception("Client requested disconnect.")
                 else:
-                    index = self.users.index(user)
-                    name = self.names[index]
-                    public_message = f'{name}: {message}'
-                    self.broadcast(public_message.encode('ascii'))
-            except:
-                self.remove_user(user)
-                break
+                    self.broadcast(f'{name}: {message}'.encode('ascii'))
+        except:
+            self.remove_user(user)
 
     def start(self):
         while True:
             user, address = self.server.accept()
             print(f"Connected with {address}")
-
-            user.send('Name'.encode('ascii'))
-            name = user.recv(1024).decode('ascii')
-            self.users.append(user)
-            self.names.append(name)
-
-            print(f"Name of the client is {name}")
-            user.send('Connected to the server.'.encode('ascii'))
-            self.broadcast(f'{name} joined the chat.'.encode('ascii'))
-
             thread = threading.Thread(target=self.handle_user, args=(user,))
             thread.start()
 
 
 if __name__ == "__main__":
-    server = Server('0.0.0.0', 15000)
+    server = ChatServer('127.0.0.1', 15000)
     server.start()
-
