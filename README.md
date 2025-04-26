@@ -1,4 +1,4 @@
-# Just a Simple TCP Chat Room
+# A Simple TCP Chat Room
 
 This project is a simple TCP-based multi-client chat application that allows users to send and receive public and private messages. 
 The chat room supports real-time communication between clients connected to a central server. 
