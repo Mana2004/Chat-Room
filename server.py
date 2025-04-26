@@ -32,7 +32,6 @@ class Server:
             name = user.recv(1024).decode('ascii')
             self.users.append(user)
             self.names.append(name)
-
             self.broadcast(f'{name} joined the chat.'.encode('ascii'))
 
             while True:
@@ -45,9 +44,11 @@ class Server:
                     self.names[index] = new_name
                     self.broadcast(f'{old_name} changed their username to {new_name}'.encode('ascii'))
                     name = new_name
+
                 elif message.lower() == 'list':
                     user_list = ', '.join(self.names)
                     user.send(f'Users in the chatroom: {user_list}'.encode('ascii'))
+
                 elif message.lower() == 'private':
                     user.send('Enter recipient names (comma-separated): '.encode('ascii'))
                     recipients = user.recv(1024).decode('ascii').split(',')
@@ -63,18 +64,22 @@ class Server:
 
                     if invalid:
                         user.send(f'User(s) not found: {", ".join(invalid)}'.encode('ascii'))
+
                     if valid:
                         user.send('Enter your private message: '.encode('ascii'))
                         private_message = user.recv(1024).decode('ascii')
                         for recipient in valid:
-                            index = self.names.index(recipient)
-                            recipient_user = self.users[index]
+                            idx = self.names.index(recipient)
+                            recipient_user = self.users[idx]
                             recipient_user.send(f'Private message from {name}: {private_message}'.encode('ascii'))
                         user.send(f'Private message sent to: {", ".join(valid)}'.encode('ascii'))
+
                 elif message.lower() == 'exit':
                     raise Exception("Client requested disconnect.")
+
                 else:
                     self.broadcast(f'{name}: {message}'.encode('ascii'))
+
         except:
             self.remove_user(user)
 
@@ -84,7 +89,6 @@ class Server:
             print(f"Connected with {address}")
             thread = threading.Thread(target=self.handle_user, args=(user,))
             thread.start()
-
 
 if __name__ == "__main__":
     server = Server('0.0.0.0', 15000)
