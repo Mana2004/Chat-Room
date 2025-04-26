@@ -44,6 +44,7 @@ class Server:
                     old_name = self.names[index]
                     self.names[index] = new_name
                     self.broadcast(f'{old_name} changed their username to {new_name}'.encode('ascii'))
+                    name = new_name
                 elif message.lower() == 'list':
                     user_list = ', '.join(self.names)
                     user.send(f'Users in the chatroom: {user_list}'.encode('ascii'))

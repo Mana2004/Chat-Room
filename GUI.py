@@ -1,9 +1,9 @@
 import tkinter as tk
 from tkinter import simpledialog
-from client import ChatClient
+from client import Client
 import threading
 
-class ChatApp(ChatClient):
+class ChatApp(Client):
     def __init__(self, root, host, port):
         self.root = root
         self.root.title("Chat Room")
