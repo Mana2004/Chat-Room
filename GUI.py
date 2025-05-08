@@ -21,12 +21,12 @@ class ChatApp(Client):
         name_entry.pack(pady=5)
         name_entry.focus()
 
-        join_button = tk.Button(self.login_window, text="Join Chat", command=self.get_username, bg="#5c5cff", fg="white", font=("Consolas", 10, "bold"), relief=tk.FLAT)
+        join_button = tk.Button(self.login_window, text="Join Chat", command=self.get_username, bg="#a591ff", fg="white", font=("Consolas", 10, "bold"), relief=tk.FLAT)
         join_button.pack(pady=10)
 
+        self.login_window.bind("<Return>", lambda event: self.get_username())
         self.root.wait_window(self.login_window)
 
-        # Now build the main interface
         self.root.deiconify()
         self.root.title("Chat Room")
         self.root.geometry("500x500")
@@ -45,16 +45,16 @@ class ChatApp(Client):
         self.entry.pack(side='left', padx=(0, 10), pady=5, ipady=4, fill=tk.X, expand=True)
         self.entry.bind("<Return>", lambda e: self.send_message())
 
-        self.send_button = tk.Button(self.entry_frame, text="Send", command=self.send_message, bg="#5c5cff", fg="white",
+        self.send_button = tk.Button(self.entry_frame, text="Send", command=self.send_message, bg="#a591ff", fg="white",
                                     activebackground="#4a4aff", font=("Consolas", 10, "bold"), relief=tk.FLAT)
         self.send_button.pack(side='right')
 
         self.button_frame = tk.Frame(self.root, bg="#2c2c2c")
         self.button_frame.pack(pady=(0, 10))
 
-        tk.Button(self.button_frame, text="Change Username", command=self.change_username_prompt, bg="#444", fg="white",
+        tk.Button(self.button_frame, text="Change Username", command=self.change_username, bg="#444", fg="white",
                 font=("Consolas", 10), relief=tk.FLAT).grid(row=0, column=0, padx=5)
-        tk.Button(self.button_frame, text="Private Message", command=self.private_recipient_prompt, bg="#444", fg="white",
+        tk.Button(self.button_frame, text="Private Message", command=self.private_message, bg="#444", fg="white",
                 font=("Consolas", 10), relief=tk.FLAT).grid(row=0, column=1, padx=5)
         tk.Button(self.button_frame, text="List Users", command=self.list_users, bg="#444", fg="white",
                 font=("Consolas", 10), relief=tk.FLAT).grid(row=0, column=2, padx=5)
@@ -62,8 +62,8 @@ class ChatApp(Client):
                 font=("Consolas", 10), relief=tk.FLAT).grid(row=0, column=3, padx=5)
 
         self.chat_frame.tag_configure("user", foreground="white")
-        self.chat_frame.tag_configure("private", foreground="skyblue")
-        self.chat_frame.tag_configure("system", foreground="#5c5cff")
+        self.chat_frame.tag_configure("[PRIVATE]>", foreground="skyblue")
+        self.chat_frame.tag_configure("[SERVER]>", foreground="#a591ff")
 
         threading.Thread(target=self.receive, args=(self.display_message,), daemon=True).start()
 
@@ -85,7 +85,7 @@ class ChatApp(Client):
         self.send("exit")
         self.root.destroy()
 
-    def change_username_prompt(self):
+    def change_username(self):
         change_win = Toplevel(self.root)
         change_win.title("Change Username")
         change_win.geometry("300x150")
@@ -102,9 +102,10 @@ class ChatApp(Client):
                 self.send(new_name)
                 change_win.destroy()
 
-        tk.Button(change_win, text="Confirm", command=confirm, bg="#5c5cff", fg="white", font=("Consolas", 10, "bold"), relief=tk.FLAT).pack(pady=10)
+        tk.Button(change_win, text="Confirm", command=confirm, bg="#a591ff", fg="white", font=("Consolas", 10, "bold"), relief=tk.FLAT).pack(pady=10)
+        change_win.bind("<Return>", lambda event: confirm())
 
-    def private_recipient_prompt(self):
+    def private_message(self):
         private_win = Toplevel(self.root)
         private_win.title("Private Message Recipients")
         private_win.geometry("350x150")
@@ -121,7 +122,8 @@ class ChatApp(Client):
                 self.send(recipients)
                 private_win.destroy()
 
-        tk.Button(private_win, text="Next", command=confirm, bg="#5c5cff", fg="white", font=("Consolas", 10, "bold"), relief=tk.FLAT).pack(pady=5)
+        tk.Button(private_win, text="Next", command=confirm, bg="#a591ff", fg="white", font=("Consolas", 10, "bold"), relief=tk.FLAT).pack(pady=5)
+        private_win.bind("<Return>", lambda event: confirm())
 
     def list_users(self):
         self.send("list")
@@ -129,10 +131,10 @@ class ChatApp(Client):
     def display_message(self, message):
         self.chat_frame.config(state='normal')
 
-        if message.lower().startswith('private'):
-            tag = "private"
-        elif message.lower().startswith('system') or "joined" in message.lower() or "left" in message.lower():
-            tag = "system"
+        if message.startswith('[PRIVATE]>'):
+            tag = "[PRIVATE]>"
+        elif message.startswith('[SERVER]>'):
+            tag = "[SERVER]>"
         else:
             tag = "user"
 

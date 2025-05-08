@@ -25,32 +25,32 @@ class Server:
             self.users.remove(user)
             self.names.remove(name)
             user.close()
-            self.broadcast(f'{name} left the chat.'.encode('ascii'))
+            self.broadcast(f'[SERVER]> {name} left the chat.'.encode('ascii'))
 
     def handle_user(self, user):
         try:
             name = user.recv(1024).decode('ascii')
             self.users.append(user)
             self.names.append(name)
-            self.broadcast(f'{name} joined the chat.'.encode('ascii'))
+            self.broadcast(f'[SERVER]> {name} joined the chat.'.encode('ascii'))
 
             while True:
                 message = user.recv(1024).decode('ascii')
                 if message.lower() == 'change':
-                    user.send('Enter your new username:'.encode('ascii'))
+                    user.send('[SERVER]> Enter your new username:'.encode('ascii'))
                     new_name = user.recv(1024).decode('ascii')
                     index = self.users.index(user)
                     old_name = self.names[index]
                     self.names[index] = new_name
-                    self.broadcast(f'{old_name} changed their username to {new_name}'.encode('ascii'))
+                    self.broadcast(f'[SERVER]> {old_name} changed their username to {new_name}'.encode('ascii'))
                     name = new_name
 
                 elif message.lower() == 'list':
                     user_list = ', '.join(self.names)
-                    user.send(f'Users in the chatroom: {user_list}'.encode('ascii'))
+                    user.send(f'[SERVER]> Users in the chatroom: {user_list}'.encode('ascii'))
 
                 elif message.lower() == 'private':
-                    user.send('Enter recipient names (comma-separated): '.encode('ascii'))
+                    user.send('[SERVER]> Enter recipient names (comma-separated): '.encode('ascii'))
                     recipients = user.recv(1024).decode('ascii').split(',')
                     recipients = [r.strip() for r in recipients]
 
@@ -63,19 +63,19 @@ class Server:
                             invalid.append(recipient)
 
                     if invalid:
-                        user.send(f'User(s) not found: {", ".join(invalid)}'.encode('ascii'))
+                        user.send(f'[SERVER]> User(s) not found: {", ".join(invalid)}'.encode('ascii'))
 
                     if valid:
-                        user.send('Enter your private message: '.encode('ascii'))
+                        user.send('[SERVER]> Enter your private message: '.encode('ascii'))
                         private_message = user.recv(1024).decode('ascii')
                         for recipient in valid:
                             idx = self.names.index(recipient)
                             recipient_user = self.users[idx]
-                            recipient_user.send(f'Private message from {name}: {private_message}'.encode('ascii'))
-                        user.send(f'Private message sent to: {", ".join(valid)}'.encode('ascii'))
+                            recipient_user.send(f'[PRIVATE]> Private message from {name}: {private_message}'.encode('ascii'))
+                        user.send(f'[PRIVATE]> Private message sent to: {", ".join(valid)}'.encode('ascii'))
 
                 elif message.lower() == 'exit':
-                    raise Exception("Client requested disconnect.")
+                    raise Exception("[SERVER]> Client requested disconnect.")
 
                 else:
                     self.broadcast(f'{name}: {message}'.encode('ascii'))
